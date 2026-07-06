@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import Header from '../components/Header'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
@@ -53,8 +52,7 @@ function HomePage() {
 
   return (
     <main className="home-page">
-      {/* HomePage는 여러 컴포넌트를 조합해서 하나의 페이지를 만듭니다. */}
-      <Header />
+      {/* HomePage는 홈 화면의 검색 기능과 검색 결과만 담당합니다. */}
       {/* value, onChange, onSearch props는 부모인 HomePage에서 SearchBar로 내려갑니다. */}
       <SearchBar
         value={city}
@@ -65,7 +63,7 @@ function HomePage() {
       {message ? <p className="search-message">{message}</p> : null}
 
       <div className="dashboard">
-        {/* city props도 부모인 HomePage에서 자식 컴포넌트로 내려갑니다. */}
+        {/* weatherData는 부모인 HomePage에서 자식 컴포넌트로 props로 내려갑니다. */}
         {/* &&는 앞의 값이 있을 때만 뒤의 컴포넌트를 보여주는 조건부 렌더링 방법입니다. */}
         {weatherData && (
           <>
