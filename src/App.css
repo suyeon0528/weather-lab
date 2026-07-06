@@ -314,9 +314,25 @@
   background: #f3f7fb;
 }
 
-.favorite-item strong,
+.favorite-city-button,
 .favorite-item span {
   display: block;
+}
+
+.favorite-city-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #111827;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.favorite-city-button:hover {
+  color: #2563eb;
 }
 
 .favorite-item strong {
@@ -329,7 +345,14 @@
   color: #6b7280;
 }
 
-.favorite-item button {
+.favorite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.favorite-actions button {
   min-height: 38px;
   padding: 0 14px;
   border: 0;
@@ -345,6 +368,7 @@
   .header h1,
   .info-card h2,
   .forecast-item strong,
+  .favorite-city-button,
   .favorite-item strong {
     color: #f9fafb;
   }
@@ -435,5 +459,13 @@
   .favorite-item {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .favorite-actions {
+    justify-content: stretch;
+  }
+
+  .favorite-actions button {
+    flex: 1 1 auto;
   }
 }

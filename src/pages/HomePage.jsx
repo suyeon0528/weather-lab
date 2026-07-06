@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
@@ -12,14 +13,14 @@ function HomePage({
   onRemoveFavorite,
   onClearFavoriteMessage,
 }) {
-  // city는 검색 input에 입력 중인 값입니다.
   const [city, setCity] = useState('')
-  // weatherData는 API에서 받아온 실제 날씨 정보를 저장합니다.
   const [weatherData, setWeatherData] = useState(null)
-  // loading은 API 요청이 진행 중인지 알려주는 상태입니다.
   const [loading, setLoading] = useState(false)
-  // error는 API 요청 실패나 빈 검색어 안내 문구를 저장합니다.
   const [error, setError] = useState('')
+  // useSearchParams는 URL 검색 파라미터를 읽고 바꾸는 React Router 훅입니다.
+  // URL 검색 파라미터는 /?city=당진 처럼 ? 뒤에 붙는 값입니다.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const cityFromUrl = searchParams.get('city')
 
   useEffect(() => {
     console.log('Weather Lab이 시작되었습니다.')
@@ -29,11 +30,46 @@ function HomePage({
     console.log(`현재 검색 도시 : ${city || '입력 없음'}`)
   }, [city])
 
+  async function searchWeather(nextCity) {
+    const trimmedCity = nextCity.trim()
+
+    if (trimmedCity === '') {
+      setError('도시 이름을 입력해주세요.')
+      setWeatherData(null)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    onClearFavoriteMessage()
+
+    try {
+      const weather = await getWeatherByCity(trimmedCity)
+      setWeatherData(weather)
+      setCity(trimmedCity)
+    } catch (error) {
+      setError(error.message)
+      setWeatherData(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    // URL의 city 값이 변경되면 이 useEffect가 다시 실행됩니다.
+    // 그래서 /?city=당진 으로 이동하면 당진 날씨를 자동으로 검색할 수 있습니다.
+    if (!cityFromUrl) {
+      return
+    }
+
+    searchWeather(cityFromUrl)
+  }, [cityFromUrl])
+
   function handleCityChange(event) {
     setCity(event.target.value)
   }
 
-  async function handleSearch() {
+  function handleSearch() {
     const trimmedCity = city.trim()
     onClearFavoriteMessage()
 
@@ -43,22 +79,9 @@ function HomePage({
       return
     }
 
-    // 요청이 시작되면 loading을 true로 바꿔 사용자에게 대기 상태를 보여줍니다.
-    setLoading(true)
-    setError('')
-
-    try {
-      // async/await는 fetch 같은 비동기 작업을 순서대로 읽기 쉽게 작성하는 문법입니다.
-      const weather = await getWeatherByCity(trimmedCity)
-      setWeatherData(weather)
-    } catch (error) {
-      // catch는 네트워크 실패, 도시 검색 실패 같은 오류를 화면에 보여주기 위해 사용합니다.
-      setError(error.message)
-      setWeatherData(null)
-    } finally {
-      // finally는 성공해도 실패해도 마지막에 항상 실행되므로 loading을 끄기에 좋습니다.
-      setLoading(false)
-    }
+    // 직접 검색할 때도 URL에 city 값을 저장합니다.
+    // URL이 바뀌면 위의 useEffect가 실행되어 기존 getWeatherByCity 흐름을 재사용합니다.
+    setSearchParams({ city: trimmedCity })
   }
 
   const isCurrentLocationFavorite =
@@ -71,7 +94,6 @@ function HomePage({
 
   return (
     <main className="home-page">
-      {/* SearchBar의 value, onChange, onSearch props 구조는 그대로 유지합니다. */}
       <SearchBar
         value={city}
         onChange={handleCityChange}
