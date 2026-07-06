@@ -7,7 +7,7 @@ function Header() {
       <p className="header-label">오늘의 날씨</p>
       <h1>우리 동네 날씨를 확인해보세요</h1>
       <p className="header-description">
-        아직 실제 날씨 API는 연결하지 않았고, 임시 데이터로 화면을 보여줍니다.
+        Open-Meteo API로 현재 날씨와 5일 예보를 확인할 수 있습니다.
       </p>
 
       <nav className="nav-menu" aria-label="주요 메뉴">

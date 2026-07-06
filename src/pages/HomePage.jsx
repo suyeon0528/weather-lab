@@ -2,69 +2,75 @@ import { useEffect, useState } from 'react'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
-import mockWeather from '../data/mockWeather'
+import { getWeatherByCity } from '../services/weatherApi'
 
 function HomePage() {
-  // useState는 컴포넌트가 기억해야 하는 값을 만들 때 사용합니다.
-  // city는 검색 input에 입력 중인 값이고, HomePage가 부모로서 관리합니다.
+  // city는 검색 input에 입력 중인 값입니다.
   const [city, setCity] = useState('')
+  // weatherData는 API에서 받아온 실제 날씨 정보를 저장합니다.
   const [weatherData, setWeatherData] = useState(null)
-  const [message, setMessage] = useState('도시를 검색해보세요.')
+  // loading은 API 요청이 진행 중인지 알려주는 상태입니다.
+  const [loading, setLoading] = useState(false)
+  // error는 API 요청 실패나 빈 검색어 안내 문구를 저장합니다.
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    // useEffect의 첫 번째 인자는 실행할 작업을 담은 함수입니다.
-    // 두 번째 인자 []는 "처음 화면에 나타날 때 한 번만 실행"하라는 뜻입니다.
     console.log('Weather Lab이 시작되었습니다.')
   }, [])
 
   useEffect(() => {
-    // [city]는 city 값이 바뀔 때마다 이 effect를 다시 실행하라는 뜻입니다.
-    // input에 입력한 값이 바뀌는 흐름을 콘솔에서 확인할 수 있습니다.
     console.log(`현재 검색 도시 : ${city || '입력 없음'}`)
   }, [city])
 
   function handleCityChange(event) {
-    // input에서 onChange가 발생하면 SearchBar가 이 함수를 호출합니다.
-    // event.target.value에는 사용자가 방금 입력한 도시명이 들어 있습니다.
     setCity(event.target.value)
   }
 
-  function handleSearch() {
+  async function handleSearch() {
     const trimmedCity = city.trim()
 
     if (trimmedCity === '') {
-      setMessage('도시 이름을 입력해주세요.')
+      setError('도시 이름을 입력해주세요.')
       setWeatherData(null)
       return
     }
 
-    const foundWeather = mockWeather[trimmedCity]
+    // 요청이 시작되면 loading을 true로 바꿔 사용자에게 대기 상태를 보여줍니다.
+    setLoading(true)
+    setError('')
 
-    // if 조건문은 검색 결과가 있는 경우와 없는 경우를 나누기 위해 사용합니다.
-    if (foundWeather) {
-      setWeatherData(foundWeather)
-      setMessage('')
-    } else {
+    try {
+      // async/await는 fetch 같은 비동기 작업을 순서대로 읽기 쉽게 작성하는 문법입니다.
+      const weather = await getWeatherByCity(trimmedCity)
+      setWeatherData(weather)
+    } catch (error) {
+      // catch는 네트워크 실패, 도시 검색 실패 같은 오류를 화면에 보여주기 위해 사용합니다.
+      setError(error.message)
       setWeatherData(null)
-      setMessage('검색 결과가 없습니다.')
+    } finally {
+      // finally는 성공해도 실패해도 마지막에 항상 실행되므로 loading을 끄기에 좋습니다.
+      setLoading(false)
     }
   }
 
   return (
     <main className="home-page">
-      {/* HomePage는 홈 화면의 검색 기능과 검색 결과만 담당합니다. */}
-      {/* value, onChange, onSearch props는 부모인 HomePage에서 SearchBar로 내려갑니다. */}
+      {/* SearchBar의 value, onChange, onSearch props 구조는 그대로 유지합니다. */}
       <SearchBar
         value={city}
         onChange={handleCityChange}
         onSearch={handleSearch}
       />
-      {/* 삼항연산자는 조건에 따라 둘 중 하나를 선택해서 보여줄 때 사용합니다. */}
-      {message ? <p className="search-message">{message}</p> : null}
+
+      {loading ? (
+        <p className="status-message">날씨 정보를 불러오는 중입니다.</p>
+      ) : null}
+      {error ? <p className="status-message error">{error}</p> : null}
+      {!loading && !error && !weatherData ? (
+        <p className="status-message">도시를 검색해보세요.</p>
+      ) : null}
 
       <div className="dashboard">
-        {/* weatherData는 부모인 HomePage에서 자식 컴포넌트로 props로 내려갑니다. */}
-        {/* &&는 앞의 값이 있을 때만 뒤의 컴포넌트를 보여주는 조건부 렌더링 방법입니다. */}
         {weatherData && (
           <>
             <WeatherCard weather={weatherData} />

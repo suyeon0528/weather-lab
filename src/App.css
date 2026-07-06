@@ -134,6 +134,17 @@
   font-size: 14px;
 }
 
+.status-message {
+  margin: -18px 0 24px;
+  color: #374151;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.status-message.error {
+  color: #dc2626;
+}
+
 .dashboard {
   display: grid;
   gap: 18px;
@@ -237,7 +248,8 @@
 
 .forecast-item strong,
 .forecast-item span,
-.forecast-item b {
+.forecast-item b,
+.forecast-item small {
   display: block;
 }
 
@@ -256,6 +268,12 @@
   font-size: 17px;
 }
 
+.forecast-item small {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 @media (prefers-color-scheme: dark) {
   .header h1,
   .info-card h2,
@@ -264,11 +282,14 @@
   }
 
   .header-description,
-  .forecast-item span {
+  .forecast-item span,
+  .forecast-item small,
+  .status-message {
     color: #9ca3af;
   }
 
-  .search-message {
+  .search-message,
+  .status-message.error {
     color: #fca5a5;
   }
 
