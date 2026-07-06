@@ -175,8 +175,26 @@
   color: #2563eb;
 }
 
+.detail-forecast-button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.detail-forecast-button:hover {
+  background: #1d4ed8;
+}
+
 .weather-card,
 .forecast-card,
+.hourly-card,
 .info-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -299,6 +317,58 @@
   font-size: 14px;
 }
 
+.forecast-heading {
+  margin-bottom: 18px;
+}
+
+.hourly-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hourly-item {
+  min-height: 190px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f3f7fb;
+  box-sizing: border-box;
+}
+
+.hourly-item strong,
+.hourly-item span,
+.hourly-item p,
+.hourly-item b,
+.hourly-item small {
+  display: block;
+}
+
+.hourly-item strong {
+  color: #111827;
+  font-size: 18px;
+}
+
+.hourly-item span,
+.hourly-item p,
+.hourly-item small {
+  color: #6b7280;
+}
+
+.hourly-item p {
+  margin: 10px 0;
+}
+
+.hourly-item b {
+  margin-bottom: 8px;
+  color: #2563eb;
+  font-size: 20px;
+}
+
+.hourly-item small {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
 .favorites-list {
   display: grid;
   gap: 12px;
@@ -368,6 +438,7 @@
   .header h1,
   .info-card h2,
   .forecast-item strong,
+  .hourly-item strong,
   .favorite-city-button,
   .favorite-item strong {
     color: #f9fafb;
@@ -376,6 +447,9 @@
   .header-description,
   .forecast-item span,
   .forecast-item small,
+  .hourly-item span,
+  .hourly-item p,
+  .hourly-item small,
   .favorite-item span,
   .status-message,
   .favorite-message {
@@ -388,6 +462,7 @@
   }
 
   .forecast-card,
+  .hourly-card,
   .info-card {
     border-color: #2e303a;
     background: #1f2028;
@@ -412,6 +487,7 @@
   }
 
   .forecast-item,
+  .hourly-item,
   .favorite-item {
     background: #16171d;
   }
@@ -452,7 +528,8 @@
   }
 
   .weather-details,
-  .forecast-list {
+  .forecast-list,
+  .hourly-list {
     grid-template-columns: 1fr;
   }
 

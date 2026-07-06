@@ -1,6 +1,12 @@
-import { NavLink } from 'react-router'
+import { NavLink, useSearchParams } from 'react-router'
 
 function Header() {
+  const [searchParams] = useSearchParams()
+  const city = searchParams.get('city')
+  const forecastPath = city
+    ? `/forecast?city=${encodeURIComponent(city)}`
+    : '/forecast'
+
   return (
     <header className="header">
       {/* 화면의 가장 위에서 앱 이름과 간단한 설명을 보여줍니다. */}
@@ -23,7 +29,7 @@ function Header() {
           오늘의 날씨
         </NavLink>
         <NavLink
-          to="/forecast"
+          to={forecastPath}
           className={({ isActive }) =>
             isActive ? 'nav-link active' : 'nav-link'
           }

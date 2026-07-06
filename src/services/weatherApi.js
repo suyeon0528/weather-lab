@@ -151,3 +151,45 @@ export async function getWeatherByCity(city) {
   const location = await searchLocation(city)
   return getWeatherByCoordinates(location.latitude, location.longitude, location)
 }
+
+export async function getHourlyWeatherByCity(city) {
+  const location = await searchLocation(city)
+  const hourlyParams = [
+    'temperature_2m',
+    'apparent_temperature',
+    'relative_humidity_2m',
+    'precipitation_probability',
+    'weather_code',
+    'wind_speed_10m',
+  ].join(',')
+  const url =
+    `${FORECAST_API_URL}?latitude=${location.latitude}&longitude=${location.longitude}` +
+    `&hourly=${hourlyParams}` +
+    '&timezone=auto&forecast_days=2&wind_speed_unit=ms'
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error('시간대별 예보를 불러오지 못했습니다.')
+  }
+
+  const data = await response.json()
+
+  return {
+    location: {
+      name: location.name,
+      region: location.region,
+    },
+    // API는 time, temperature_2m 같은 값을 각각 배열로 줍니다.
+    // 같은 index끼리 하나의 시간대 데이터이므로 index를 기준으로 객체 배열로 합칩니다.
+    hourly: data.hourly.time.map((time, index) => ({
+      time,
+      temperature: data.hourly.temperature_2m[index],
+      apparentTemperature: data.hourly.apparent_temperature[index],
+      humidity: data.hourly.relative_humidity_2m[index],
+      precipitationProbability: data.hourly.precipitation_probability[index],
+      weatherCode: data.hourly.weather_code[index],
+      windSpeed: data.hourly.wind_speed_10m[index],
+    })),
+  }
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
@@ -20,6 +20,7 @@ function HomePage({
   // useSearchParams는 URL 검색 파라미터를 읽고 바꾸는 React Router 훅입니다.
   // URL 검색 파라미터는 /?city=당진 처럼 ? 뒤에 붙는 값입니다.
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const cityFromUrl = searchParams.get('city')
 
   useEffect(() => {
@@ -81,7 +82,20 @@ function HomePage({
 
     // 직접 검색할 때도 URL에 city 값을 저장합니다.
     // URL이 바뀌면 위의 useEffect가 실행되어 기존 getWeatherByCity 흐름을 재사용합니다.
+    if (cityFromUrl === trimmedCity) {
+      searchWeather(trimmedCity)
+      return
+    }
+
     setSearchParams({ city: trimmedCity })
+  }
+
+  function handleViewHourlyForecast() {
+    if (!weatherData) {
+      return
+    }
+
+    navigate(`/forecast?city=${encodeURIComponent(weatherData.location.name)}`)
   }
 
   const isCurrentLocationFavorite =
@@ -122,6 +136,13 @@ function HomePage({
             />
             <WeatherCard weather={weatherData} />
             <ForecastList weather={weatherData} />
+            <button
+              type="button"
+              className="detail-forecast-button"
+              onClick={handleViewHourlyForecast}
+            >
+              시간대별 자세한 예보 보기
+            </button>
           </>
         )}
       </div>
