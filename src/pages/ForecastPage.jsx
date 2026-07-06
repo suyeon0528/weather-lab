@@ -98,6 +98,10 @@ function ForecastPage() {
             <h2>
               {hourlyWeather.location.name}, {hourlyWeather.location.region}
             </h2>
+            <p>
+              시간대별 날씨를 확인하고 비 소식과 기온 변화를 한눈에
+              살펴보세요.
+            </p>
           </section>
           <HourlyForecastList hourly={upcomingHourly} />
         </>
