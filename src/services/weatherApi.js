@@ -10,13 +10,11 @@ function normalizeText(value) {
 }
 
 function formatLocationName(name) {
-  return String(name || '')
-    .replace(/특별자치시$/, '')
-    .replace(/특별자치도$/, '')
-    .replace(/특별시$/, '')
-    .replace(/광역시$/, '')
-    .replace(/시$/, '')
-    .trim()
+  return String(name || '').trim()
+}
+
+function getValue(values, index) {
+  return Array.isArray(values) ? values[index] ?? null : null
 }
 
 function isSameAdmin1(location, alias) {
@@ -36,7 +34,6 @@ function selectBestLocation(results, alias) {
     return null
   }
 
-  // 한글 별칭에 기대 행정구역(admin1)이 있으면 해당 행정구역과 일치하는 결과를 우선 선택합니다.
   const adminMatchedLocation = koreaResults.find((location) =>
     isSameAdmin1(location, alias),
   )
@@ -45,27 +42,66 @@ function selectBestLocation(results, alias) {
     return adminMatchedLocation
   }
 
-  // 정확한 행정구역을 찾지 못하면 대한민국 결과 중 인구가 가장 많은 결과를 선택합니다.
   return [...koreaResults].sort(
     (a, b) => (b.population || 0) - (a.population || 0),
   )[0]
 }
 
+function mapHourlyWeather(hourly) {
+  // Open-Meteo는 time, temperature_2m처럼 항목별 배열을 따로 줍니다.
+  // 같은 index의 값들이 같은 시간대 데이터이므로 하나의 객체 배열로 합칩니다.
+  return (hourly?.time || []).map((time, index) => ({
+    time,
+    temperature: getValue(hourly.temperature_2m, index),
+    apparentTemperature: getValue(hourly.apparent_temperature, index),
+    humidity: getValue(hourly.relative_humidity_2m, index),
+    precipitationProbability: getValue(hourly.precipitation_probability, index),
+    precipitation: getValue(hourly.precipitation, index),
+    weatherCode: getValue(hourly.weather_code, index),
+    cloudCover: getValue(hourly.cloud_cover, index),
+    visibility: getValue(hourly.visibility, index),
+    windSpeed: getValue(hourly.wind_speed_10m, index),
+    windDirection: getValue(hourly.wind_direction_10m, index),
+    windGusts: getValue(hourly.wind_gusts_10m, index),
+  }))
+}
+
+function mapDailyWeather(daily) {
+  // daily도 날짜 배열의 index를 기준으로 최고/최저기온, 일출, 일몰 등을 합칩니다.
+  return (daily?.time || []).map((date, index) => ({
+    date,
+    weatherCode: getValue(daily.weather_code, index),
+    maxTemperature: getValue(daily.temperature_2m_max, index),
+    minTemperature: getValue(daily.temperature_2m_min, index),
+    maxApparentTemperature: getValue(daily.apparent_temperature_max, index),
+    minApparentTemperature: getValue(daily.apparent_temperature_min, index),
+    precipitationProbability: getValue(daily.precipitation_probability_max, index),
+    precipitationSum: getValue(daily.precipitation_sum, index),
+    sunrise: getValue(daily.sunrise, index),
+    sunset: getValue(daily.sunset, index),
+    daylightDuration: getValue(daily.daylight_duration, index),
+    sunshineDuration: getValue(daily.sunshine_duration, index),
+    uvIndexMax: getValue(daily.uv_index_max, index),
+    maxWindSpeed: getValue(daily.wind_speed_10m_max, index),
+    maxWindGusts: getValue(daily.wind_gusts_10m_max, index),
+    dominantWindDirection: getValue(daily.wind_direction_10m_dominant, index),
+  }))
+}
+
 export async function searchLocation(city) {
-  const trimmedCity = city.trim()
+  const trimmedCity = String(city || '').trim()
 
   if (trimmedCity === '') {
     throw new Error('도시 이름을 입력해주세요.')
   }
 
-  // 한글 도시명이 별칭 목록에 있으면 Open-Meteo가 잘 찾는 영문 이름으로 바꿔서 검색합니다.
-  // 예: 사용자가 "서울"을 입력하면 API에는 "Seoul"로 요청합니다.
+  // 한글 도시명이 별칭 목록에 있으면 Open-Meteo가 더 잘 찾는 검색어로 바꿉니다.
+  // 예: "서울" -> "Seoul", "당진" -> "당진시"
   const alias = koreanCityAliases[trimmedCity]
   const apiSearchCity = alias?.query || trimmedCity
   const encodedCity = encodeURIComponent(apiSearchCity)
   const url = `${GEOCODING_API_URL}?name=${encodedCity}&count=10&language=ko&countryCode=KR&format=json`
 
-  // fetch는 브라우저에 기본으로 들어 있는 네트워크 요청 함수입니다.
   const response = await fetch(url)
 
   if (!response.ok) {
@@ -79,15 +115,7 @@ export async function searchLocation(city) {
     throw new Error('도시를 찾을 수 없습니다.')
   }
 
-  console.log('선택된 지역:', {
-    name: location.name,
-    admin1: location.admin1,
-    latitude: location.latitude,
-    longitude: location.longitude,
-  })
-
   return {
-    // 화면에는 사용자가 조합한 이름이 아니라 Geocoding API가 반환한 실제 지역명을 보여줍니다.
     name: formatLocationName(location.name),
     region: location.admin1 || location.country || '대한민국',
     latitude: location.latitude,
@@ -100,28 +128,58 @@ export async function getWeatherByCoordinates(
   longitude,
   location = {
     name: '현재 위치',
-    region: '',
+    region: `위도 ${Number(latitude).toFixed(2)}, 경도 ${Number(longitude).toFixed(2)}`,
     latitude,
     longitude,
   },
 ) {
   const currentParams = [
     'temperature_2m',
-    'relative_humidity_2m',
     'apparent_temperature',
+    'relative_humidity_2m',
     'weather_code',
+    'precipitation',
+    'cloud_cover',
     'wind_speed_10m',
+    'wind_direction_10m',
+    'wind_gusts_10m',
+    'surface_pressure',
+    'is_day',
+  ].join(',')
+  const hourlyParams = [
+    'temperature_2m',
+    'apparent_temperature',
+    'relative_humidity_2m',
+    'precipitation_probability',
+    'precipitation',
+    'weather_code',
+    'cloud_cover',
+    'visibility',
+    'wind_speed_10m',
+    'wind_direction_10m',
+    'wind_gusts_10m',
   ].join(',')
   const dailyParams = [
     'weather_code',
     'temperature_2m_max',
     'temperature_2m_min',
+    'apparent_temperature_max',
+    'apparent_temperature_min',
     'precipitation_probability_max',
+    'precipitation_sum',
+    'sunrise',
+    'sunset',
+    'daylight_duration',
+    'sunshine_duration',
+    'uv_index_max',
+    'wind_speed_10m_max',
+    'wind_gusts_10m_max',
+    'wind_direction_10m_dominant',
   ].join(',')
   const url =
     `${FORECAST_API_URL}?latitude=${latitude}&longitude=${longitude}` +
-    `&current=${currentParams}&daily=${dailyParams}` +
-    '&timezone=auto&forecast_days=5&wind_speed_unit=ms'
+    `&current=${currentParams}&hourly=${hourlyParams}&daily=${dailyParams}` +
+    '&timezone=auto&forecast_days=7&wind_speed_unit=ms'
 
   const response = await fetch(url)
 
@@ -130,6 +188,8 @@ export async function getWeatherByCoordinates(
   }
 
   const data = await response.json()
+  const hourly = mapHourlyWeather(data.hourly)
+  const daily = mapDailyWeather(data.daily)
 
   return {
     location: {
@@ -137,68 +197,39 @@ export async function getWeatherByCoordinates(
       region: location.region || '',
       latitude,
       longitude,
+      timezone: data.timezone || '',
     },
     current: {
-      temperature: data.current.temperature_2m,
-      apparentTemperature: data.current.apparent_temperature,
-      humidity: data.current.relative_humidity_2m,
-      windSpeed: data.current.wind_speed_10m,
-      weatherCode: data.current.weather_code,
+      time: data.current?.time || null,
+      temperature: data.current?.temperature_2m ?? null,
+      apparentTemperature: data.current?.apparent_temperature ?? null,
+      humidity: data.current?.relative_humidity_2m ?? null,
+      weatherCode: data.current?.weather_code ?? null,
+      precipitation: data.current?.precipitation ?? null,
+      cloudCover: data.current?.cloud_cover ?? null,
+      windSpeed: data.current?.wind_speed_10m ?? null,
+      windDirection: data.current?.wind_direction_10m ?? null,
+      windGusts: data.current?.wind_gusts_10m ?? null,
+      surfacePressure: data.current?.surface_pressure ?? null,
+      isDay: data.current?.is_day === 1,
     },
-    forecast: data.daily.time.map((date, index) => ({
-      date,
-      weatherCode: data.daily.weather_code[index],
-      maxTemperature: data.daily.temperature_2m_max[index],
-      minTemperature: data.daily.temperature_2m_min[index],
-      precipitationProbability: data.daily.precipitation_probability_max[index],
-    })),
+    hourly,
+    daily,
+    forecast: daily,
   }
 }
 
 export async function getWeatherByCity(city) {
-  // async/await를 사용하면 "도시 검색 후 날씨 검색"처럼 순서가 있는 비동기 작업을 읽기 쉽게 쓸 수 있습니다.
   const location = await searchLocation(city)
   return getWeatherByCoordinates(location.latitude, location.longitude, location)
 }
 
 export async function getHourlyWeatherByCity(city) {
-  const location = await searchLocation(city)
-  const hourlyParams = [
-    'temperature_2m',
-    'apparent_temperature',
-    'relative_humidity_2m',
-    'precipitation_probability',
-    'weather_code',
-    'wind_speed_10m',
-  ].join(',')
-  const url =
-    `${FORECAST_API_URL}?latitude=${location.latitude}&longitude=${location.longitude}` +
-    `&hourly=${hourlyParams}` +
-    '&timezone=auto&forecast_days=2&wind_speed_unit=ms'
-
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error('시간대별 예보를 불러오지 못했습니다.')
-  }
-
-  const data = await response.json()
+  const weather = await getWeatherByCity(city)
 
   return {
-    location: {
-      name: location.name,
-      region: location.region,
-    },
-    // API는 time, temperature_2m 같은 값을 각각 배열로 줍니다.
-    // 같은 index끼리 하나의 시간대 데이터이므로 index를 기준으로 객체 배열로 합칩니다.
-    hourly: data.hourly.time.map((time, index) => ({
-      time,
-      temperature: data.hourly.temperature_2m[index],
-      apparentTemperature: data.hourly.apparent_temperature[index],
-      humidity: data.hourly.relative_humidity_2m[index],
-      precipitationProbability: data.hourly.precipitation_probability[index],
-      weatherCode: data.hourly.weather_code[index],
-      windSpeed: data.hourly.wind_speed_10m[index],
-    })),
+    location: weather.location,
+    hourly: weather.hourly,
+    daily: weather.daily,
   }
 }

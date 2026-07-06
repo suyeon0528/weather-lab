@@ -1,4 +1,5 @@
 import { getWeatherInfo } from '../utils/weatherCode'
+import WeatherIcon from './WeatherIcon'
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   month: 'long',
@@ -92,9 +93,7 @@ function HourlyForecastList({ hourly }) {
                     </div>
 
                     <div className="hourly-weather">
-                      <span className="hourly-icon" aria-hidden="true">
-                        {weatherInfo.icon}
-                      </span>
+                      <WeatherIcon code={item.weatherCode} className="hourly-icon" />
                       <span>{weatherInfo.label}</span>
                     </div>
 
@@ -115,6 +114,10 @@ function HourlyForecastList({ hourly }) {
                       <div>
                         <dt>풍속</dt>
                         <dd>{item.windSpeed} m/s</dd>
+                      </div>
+                      <div>
+                        <dt>돌풍</dt>
+                        <dd>{item.windGusts ?? '정보 없음'} m/s</dd>
                       </div>
                     </dl>
                   </article>

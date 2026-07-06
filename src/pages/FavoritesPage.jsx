@@ -1,64 +1,99 @@
-import { useNavigate } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink } from 'react-router'
+import FavoriteCityCard from '../components/FavoriteCityCard'
+import SectionHeader from '../components/SectionHeader'
 import StatusMessage from '../components/StatusMessage'
+import { getWeatherByCoordinates } from '../services/weatherApi'
 
 function FavoritesPage({ favorites, onRemoveFavorite }) {
-  // useNavigate는 코드 안에서 다른 경로로 이동할 때 사용하는 React Router 훅입니다.
-  const navigate = useNavigate()
+  const [favoriteWeatherResults, setFavoriteWeatherResults] = useState([])
+  const [loading, setLoading] = useState(false)
 
-  function handleViewWeather(favorite) {
-    // encodeURIComponent는 한글이나 공백이 URL에서 깨지지 않도록 안전하게 바꿔줍니다.
-    navigate(`/?city=${encodeURIComponent(favorite.name)}`)
+  const favoriteKey = useMemo(
+    () =>
+      favorites
+        .map((favorite) => `${favorite.latitude}-${favorite.longitude}`)
+        .join('|'),
+    [favorites],
+  )
+
+  useEffect(() => {
+    if (favorites.length === 0) {
+      return
+    }
+
+    let ignore = false
+
+    async function loadFavoriteWeather() {
+      setLoading(true)
+
+      // Promise.allSettled는 여러 요청 중 일부가 실패해도 성공한 결과를 잃지 않게 해줍니다.
+      const results = await Promise.allSettled(
+        favorites.map((favorite) =>
+          getWeatherByCoordinates(favorite.latitude, favorite.longitude, favorite),
+        ),
+      )
+
+      if (!ignore) {
+        setFavoriteWeatherResults(results)
+        setLoading(false)
+      }
+    }
+
+    loadFavoriteWeather()
+
+    return () => {
+      ignore = true
+    }
+  }, [favoriteKey, favorites])
+
+  if (favorites.length === 0) {
+    return (
+      <main className="page">
+        <StatusMessage type="empty" title="저장된 도시가 없습니다.">
+          자주 확인하는 도시를 즐겨찾기에 추가해보세요.
+          <NavLink className="btn btn-primary home-link" to="/">
+            홈으로 이동
+          </NavLink>
+        </StatusMessage>
+      </main>
+    )
   }
 
   return (
     <main className="page">
-      {favorites.length === 0 ? (
-        <StatusMessage
-          type="empty"
-          title="아직 저장된 즐겨찾기 도시가 없습니다."
-        >
-          오늘의 날씨 페이지에서 자주 확인하는 도시를 저장해보세요.
-        </StatusMessage>
-      ) : (
-        <section className="info-card">
-          <p className="card-label">즐겨찾기</p>
-          <div className="favorites-list">
-            {favorites.map((location) => (
-              <article
-                className="favorite-item"
-                key={`${location.latitude}-${location.longitude}`}
-              >
-                <div>
-                  <button
-                    type="button"
-                    className="btn btn-text favorite-city-button"
-                    onClick={() => handleViewWeather(location)}
-                  >
-                    {location.name}
-                  </button>
-                  <span>{location.region}</span>
-                </div>
-                <div className="favorite-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => handleViewWeather(location)}
-                  >
-                    날씨 보기
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => onRemoveFavorite(location)}
-                  >
-                    삭제
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="panel">
+        <SectionHeader
+          eyebrow="즐겨찾기"
+          title="저장 도시"
+          description="저장한 도시의 현재 날씨를 빠르게 확인할 수 있습니다."
+        />
+
+        {loading ? (
+          <StatusMessage type="loading" title="저장 도시 날씨를 불러오는 중입니다." />
+        ) : null}
+
+        <div className="favorite-city-grid">
+          {favorites.map((favorite, index) => {
+            const result = favoriteWeatherResults[index]
+            const weather = result?.status === 'fulfilled' ? result.value : null
+            const error =
+              result?.status === 'rejected'
+                ? '이 도시의 날씨를 불러오지 못했습니다.'
+                : ''
+
+            return (
+              <FavoriteCityCard
+                key={`${favorite.latitude}-${favorite.longitude}`}
+                favorite={favorite}
+                weather={weather}
+                error={error}
+                onRemove={onRemoveFavorite}
+              />
+            )
+          })}
+        </div>
+      </section>
     </main>
   )
 }

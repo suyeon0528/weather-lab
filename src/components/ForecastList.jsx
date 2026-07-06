@@ -1,38 +1,50 @@
+import { Droplets } from 'lucide-react'
 import { getWeatherInfo } from '../utils/weatherCode'
+import { formatDayLabel, formatMonthDay } from '../utils/dateFormat'
+import WeatherIcon from './WeatherIcon'
+import SectionHeader from './SectionHeader'
 
-const forecastDateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  weekday: 'short',
-  month: 'numeric',
-  day: 'numeric',
-})
+function formatValue(value, unit = '') {
+  return value === null || value === undefined ? '정보 없음' : `${value}${unit}`
+}
 
 function ForecastList({ weather }) {
-  if (!weather) {
+  const forecast = weather?.daily || weather?.forecast || []
+
+  if (!weather || forecast.length === 0) {
     return null
   }
 
   return (
-    <section className="forecast-card">
-      <p className="card-label">{weather.location.name} 5일 예보</p>
+    <section className="panel forecast-card">
+      <SectionHeader
+        eyebrow="주간 예보"
+        title={`${weather.location.name} 7일 예보`}
+        description="날짜별 기온과 비 소식을 비교해보세요."
+      />
 
       <div className="forecast-list">
-        {/* map()은 forecast 배열의 각 날짜 데이터를 하나씩 JSX 카드로 바꿔줍니다. */}
-        {weather.forecast.map((day) => {
+        {/* map()은 날짜별 예보 배열을 같은 형태의 카드 목록으로 바꿔줍니다. */}
+        {forecast.map((day, index) => {
           const weatherInfo = getWeatherInfo(day.weatherCode)
-          const date = new Date(`${day.date}T00:00`)
 
           return (
             <article className="forecast-item" key={day.date}>
-              <strong>{forecastDateFormatter.format(date)}</strong>
-              <span className="forecast-icon" aria-hidden="true">
-                {weatherInfo.icon}
-              </span>
+              <div className="forecast-date">
+                <strong>{formatDayLabel(day.date, index)}</strong>
+                <span>{formatMonthDay(day.date)}</span>
+              </div>
+              <WeatherIcon code={day.weatherCode} />
               <span className="forecast-label">{weatherInfo.label}</span>
               <div className="forecast-temps">
-                <b>최고 {day.maxTemperature}℃</b>
-                <span>최저 {day.minTemperature}℃</span>
+                <b>최고 {formatValue(day.maxTemperature, '℃')}</b>
+                <span>최저 {formatValue(day.minTemperature, '℃')}</span>
               </div>
-              <small>강수확률 {day.precipitationProbability}%</small>
+              <small>
+                <Droplets size={14} aria-hidden="true" />
+                강수확률 {formatValue(day.precipitationProbability, '%')}
+              </small>
+              <small>예상 강수량 {formatValue(day.precipitationSum, ' mm')}</small>
             </article>
           )
         })}

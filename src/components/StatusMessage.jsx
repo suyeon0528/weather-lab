@@ -1,12 +1,26 @@
-function StatusMessage({ type = 'info', title, children }) {
-  const icons = {
-    info: 'ℹ️',
-    loading: '',
-    success: '✓',
-    error: '!',
-    empty: '☁️',
+import { AlertCircle, CheckCircle2, CloudSun, Info, LoaderCircle } from 'lucide-react'
+
+function renderStatusIcon(type) {
+  if (type === 'loading') {
+    return <LoaderCircle className="spin-icon" />
   }
 
+  if (type === 'success') {
+    return <CheckCircle2 />
+  }
+
+  if (type === 'error') {
+    return <AlertCircle />
+  }
+
+  if (type === 'empty') {
+    return <CloudSun />
+  }
+
+  return <Info />
+}
+
+function StatusMessage({ type = 'info', title, children }) {
   return (
     <section
       className={`status-card status-card-${type}`}
@@ -14,11 +28,11 @@ function StatusMessage({ type = 'info', title, children }) {
       aria-live={type === 'error' || type === 'loading' ? 'assertive' : 'polite'}
     >
       <div className="status-icon" aria-hidden="true">
-        {type === 'loading' ? <span className="spinner"></span> : icons[type]}
+        {renderStatusIcon(type)}
       </div>
-      <div>
+      <div className="status-content">
         <p>{title}</p>
-        {children ? <span>{children}</span> : null}
+        {children ? <div className="status-description">{children}</div> : null}
       </div>
     </section>
   )

@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useCallback, useEffect, useState } from 'react'
+import { NavLink, useNavigate, useSearchParams } from 'react-router'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
 import FavoriteButton from '../components/FavoriteButton'
 import StatusMessage from '../components/StatusMessage'
+import HourlyForecast from '../components/HourlyForecast'
+import LifestyleTips from '../components/LifestyleTips'
+import AirQualitySummary from '../components/AirQualitySummary'
+import SunriseSunsetCard from '../components/SunriseSunsetCard'
 import {
   getWeatherByCity,
   getWeatherByCoordinates,
 } from '../services/weatherApi'
+import { getAirQualityByCoordinates } from '../services/airQualityApi'
+import { createCityUrl } from '../utils/cityUrl'
+import { formatDateTime } from '../utils/dateFormat'
 
 const geolocationOptions = {
   // enableHighAccuracy가 false이면 아주 정밀한 위치보다 빠르고 부담이 적은 위치를 우선 사용합니다.
@@ -48,21 +55,16 @@ function HomePage({
   const [error, setError] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState('')
+  const [airQualityData, setAirQualityData] = useState(null)
+  const [airQualityLoading, setAirQualityLoading] = useState(false)
+  const [airQualityError, setAirQualityError] = useState('')
   // useSearchParams는 URL 검색 파라미터를 읽고 바꾸는 React Router 훅입니다.
   // URL 검색 파라미터는 /?city=당진 처럼 ? 뒤에 붙는 값입니다.
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const cityFromUrl = searchParams.get('city')
 
-  useEffect(() => {
-    console.log('Weather Lab이 시작되었습니다.')
-  }, [])
-
-  useEffect(() => {
-    console.log(`현재 검색 도시 : ${city || '입력 없음'}`)
-  }, [city])
-
-  async function searchWeather(nextCity) {
+  const searchWeather = useCallback(async (nextCity) => {
     const trimmedCity = nextCity.trim()
 
     if (trimmedCity === '') {
@@ -74,6 +76,8 @@ function HomePage({
     setLoading(true)
     setError('')
     setLocationError('')
+    setAirQualityData(null)
+    setAirQualityError('')
     onClearFavoriteMessage()
 
     try {
@@ -86,7 +90,47 @@ function HomePage({
     } finally {
       setLoading(false)
     }
-  }
+  }, [onClearFavoriteMessage])
+
+  useEffect(() => {
+    if (!weatherData) {
+      return
+    }
+
+    let ignore = false
+
+    async function loadAirQualitySummary() {
+      setAirQualityLoading(true)
+      setAirQualityError('')
+
+      try {
+        const data = await getAirQualityByCoordinates(
+          weatherData.location.latitude,
+          weatherData.location.longitude,
+          weatherData.location,
+        )
+
+        if (!ignore) {
+          setAirQualityData(data)
+        }
+      } catch (error) {
+        if (!ignore) {
+          setAirQualityError(error.message)
+          setAirQualityData(null)
+        }
+      } finally {
+        if (!ignore) {
+          setAirQualityLoading(false)
+        }
+      }
+    }
+
+    loadAirQualitySummary()
+
+    return () => {
+      ignore = true
+    }
+  }, [weatherData])
 
   useEffect(() => {
     // URL의 city 값이 변경되면 이 useEffect가 다시 실행됩니다.
@@ -95,8 +139,12 @@ function HomePage({
       return
     }
 
-    searchWeather(cityFromUrl)
-  }, [cityFromUrl])
+    async function loadWeatherFromUrl() {
+      await searchWeather(cityFromUrl)
+    }
+
+    loadWeatherFromUrl()
+  }, [cityFromUrl, searchWeather])
 
   function handleCityChange(event) {
     setCity(event.target.value)
@@ -125,6 +173,8 @@ function HomePage({
   function handleCurrentLocationSearch() {
     setError('')
     setLocationError('')
+    setAirQualityData(null)
+    setAirQualityError('')
     onClearFavoriteMessage()
 
     // navigator.geolocation은 브라우저가 제공하는 현재 위치 확인 기능입니다.
@@ -146,6 +196,8 @@ function HomePage({
         try {
           const weather = await getWeatherByCoordinates(latitude, longitude)
           setWeatherData(weather)
+          setAirQualityData(null)
+          setAirQualityError('')
           setCity('')
           setSearchParams({})
         } catch (error) {
@@ -174,6 +226,9 @@ function HomePage({
     navigate(`/forecast?city=${encodeURIComponent(weatherData.location.name)}`)
   }
 
+  const selectedCity =
+    weatherData?.location.name === '현재 위치' ? '' : weatherData?.location.name
+
   const isCurrentLocationFavorite =
     weatherData &&
     favorites.some(
@@ -187,7 +242,7 @@ function HomePage({
       <section className="home-hero">
         <p className="eyebrow">오늘의 날씨</p>
         <h1>우리 동네 날씨를 확인해보세요</h1>
-        <p>현재 날씨부터 5일 예보까지 한눈에 확인할 수 있어요.</p>
+        <p>현재 날씨부터 시간별 예보, 7일 예보와 대기질까지 한눈에 확인할 수 있어요.</p>
       </section>
 
       <section className="search-panel" aria-label="날씨 검색">
@@ -248,8 +303,30 @@ function HomePage({
                   onRemove={onRemoveFavorite}
                 />
               }
+              detailAction={
+                selectedCity ? (
+                  <NavLink
+                    className="btn btn-primary"
+                    to={createCityUrl('/forecast', selectedCity)}
+                  >
+                    상세 예보 보기
+                  </NavLink>
+                ) : null
+              }
             />
+            <HourlyForecast hourly={weatherData.hourly} />
             <ForecastList weather={weatherData} />
+            <LifestyleTips
+              weatherData={weatherData}
+              airQualityData={airQualityData}
+            />
+            <AirQualitySummary
+              airQualityData={airQualityData}
+              loading={airQualityLoading}
+              error={airQualityError}
+              city={selectedCity}
+            />
+            <SunriseSunsetCard weatherData={weatherData} />
             {weatherData.location.name !== '현재 위치' ? (
               <section className="detail-forecast-cta">
                 <div>
@@ -266,6 +343,9 @@ function HomePage({
                 </button>
               </section>
             ) : null}
+            <p className="data-updated">
+              데이터 갱신 시각: {formatDateTime(weatherData.current.time)}
+            </p>
           </>
         )}
       </div>
