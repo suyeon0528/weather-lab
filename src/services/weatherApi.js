@@ -126,6 +126,8 @@ export async function getWeatherByCoordinates(latitude, longitude, location) {
     location: {
       name: location.name,
       region: location.region,
+      latitude,
+      longitude,
     },
     current: {
       temperature: data.current.temperature_2m,

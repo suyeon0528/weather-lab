@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react'
 import SearchBar from '../components/SearchBar'
 import WeatherCard from '../components/WeatherCard'
 import ForecastList from '../components/ForecastList'
+import FavoriteButton from '../components/FavoriteButton'
 import { getWeatherByCity } from '../services/weatherApi'
 
-function HomePage() {
+function HomePage({
+  favorites,
+  favoriteMessage,
+  onAddFavorite,
+  onRemoveFavorite,
+  onClearFavoriteMessage,
+}) {
   // city는 검색 input에 입력 중인 값입니다.
   const [city, setCity] = useState('')
   // weatherData는 API에서 받아온 실제 날씨 정보를 저장합니다.
@@ -28,6 +35,7 @@ function HomePage() {
 
   async function handleSearch() {
     const trimmedCity = city.trim()
+    onClearFavoriteMessage()
 
     if (trimmedCity === '') {
       setError('도시 이름을 입력해주세요.')
@@ -53,6 +61,14 @@ function HomePage() {
     }
   }
 
+  const isCurrentLocationFavorite =
+    weatherData &&
+    favorites.some(
+      (favorite) =>
+        favorite.latitude === weatherData.location.latitude &&
+        favorite.longitude === weatherData.location.longitude,
+    )
+
   return (
     <main className="home-page">
       {/* SearchBar의 value, onChange, onSearch props 구조는 그대로 유지합니다. */}
@@ -69,10 +85,19 @@ function HomePage() {
       {!loading && !error && !weatherData ? (
         <p className="status-message">도시를 검색해보세요.</p>
       ) : null}
+      {favoriteMessage && (
+        <p className="favorite-message">{favoriteMessage}</p>
+      )}
 
       <div className="dashboard">
         {weatherData && (
           <>
+            <FavoriteButton
+              location={weatherData.location}
+              isFavorite={isCurrentLocationFavorite}
+              onAdd={onAddFavorite}
+              onRemove={onRemoveFavorite}
+            />
             <WeatherCard weather={weatherData} />
             <ForecastList weather={weatherData} />
           </>

@@ -141,6 +141,13 @@
   font-weight: 700;
 }
 
+.favorite-message {
+  margin: -18px 0 24px;
+  color: #2563eb;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .status-message.error {
   color: #dc2626;
 }
@@ -148,6 +155,24 @@
 .dashboard {
   display: grid;
   gap: 18px;
+}
+
+.favorite-button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #1f2937;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.favorite-button:hover {
+  border-color: #2563eb;
+  color: #2563eb;
 }
 
 .weather-card,
@@ -274,17 +299,62 @@
   font-size: 14px;
 }
 
+.favorites-list {
+  display: grid;
+  gap: 12px;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f3f7fb;
+}
+
+.favorite-item strong,
+.favorite-item span {
+  display: block;
+}
+
+.favorite-item strong {
+  color: #111827;
+  font-size: 18px;
+}
+
+.favorite-item span {
+  margin-top: 4px;
+  color: #6b7280;
+}
+
+.favorite-item button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
   .header h1,
   .info-card h2,
-  .forecast-item strong {
+  .forecast-item strong,
+  .favorite-item strong {
     color: #f9fafb;
   }
 
   .header-description,
   .forecast-item span,
   .forecast-item small,
-  .status-message {
+  .favorite-item span,
+  .status-message,
+  .favorite-message {
     color: #9ca3af;
   }
 
@@ -305,13 +375,20 @@
     background: #1f2028;
   }
 
+  .favorite-button {
+    border-color: #374151;
+    color: #f9fafb;
+    background: #1f2028;
+  }
+
   .search-bar input {
     border-color: #374151;
     color: #f9fafb;
     background: #1f2028;
   }
 
-  .forecast-item {
+  .forecast-item,
+  .favorite-item {
     background: #16171d;
   }
 }
@@ -353,5 +430,10 @@
   .weather-details,
   .forecast-list {
     grid-template-columns: 1fr;
+  }
+
+  .favorite-item {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
