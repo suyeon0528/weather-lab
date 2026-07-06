@@ -1,5 +1,11 @@
 import { getWeatherInfo } from '../utils/weatherCode'
 
+const forecastDateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  weekday: 'short',
+  month: 'numeric',
+  day: 'numeric',
+})
+
 function ForecastList({ weather }) {
   if (!weather) {
     return null
@@ -13,16 +19,19 @@ function ForecastList({ weather }) {
         {/* map()은 forecast 배열의 각 날짜 데이터를 하나씩 JSX 카드로 바꿔줍니다. */}
         {weather.forecast.map((day) => {
           const weatherInfo = getWeatherInfo(day.weatherCode)
+          const date = new Date(`${day.date}T00:00`)
 
           return (
             <article className="forecast-item" key={day.date}>
-              <strong>{day.date}</strong>
-              <span>
-                <span aria-hidden="true">{weatherInfo.icon}</span>{' '}
-                {weatherInfo.label}
+              <strong>{forecastDateFormatter.format(date)}</strong>
+              <span className="forecast-icon" aria-hidden="true">
+                {weatherInfo.icon}
               </span>
-              <b>최고 {day.maxTemperature}℃</b>
-              <b>최저 {day.minTemperature}℃</b>
+              <span className="forecast-label">{weatherInfo.label}</span>
+              <div className="forecast-temps">
+                <b>최고 {day.maxTemperature}℃</b>
+                <span>최저 {day.minTemperature}℃</span>
+              </div>
               <small>강수확률 {day.precipitationProbability}%</small>
             </article>
           )

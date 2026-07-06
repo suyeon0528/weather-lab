@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useSearchParams } from 'react-router'
 import HourlyForecastList from '../components/HourlyForecastList'
+import StatusMessage from '../components/StatusMessage'
 import { getHourlyWeatherByCity } from '../services/weatherApi'
 
 function ForecastPage() {
@@ -67,7 +68,7 @@ function ForecastPage() {
         <section className="info-card">
           <p className="card-label">자세한 예보</p>
           <h2>먼저 오늘의 날씨 페이지에서 도시를 검색해주세요.</h2>
-          <NavLink className="home-link" to="/">
+          <NavLink className="btn btn-primary home-link" to="/">
             홈으로 이동
           </NavLink>
         </section>
@@ -78,17 +79,15 @@ function ForecastPage() {
   return (
     <main className="page">
       {loading ? (
-        <p className="status-message">시간대별 예보를 불러오는 중입니다.</p>
+        <StatusMessage type="loading" title="시간대별 예보를 불러오는 중입니다." />
       ) : null}
 
       {error ? (
-        <section className="info-card">
-          <p className="card-label">오류</p>
-          <h2>{error}</h2>
-          <NavLink className="home-link" to="/">
+        <StatusMessage type="error" title={error}>
+          <NavLink className="btn btn-primary home-link" to="/">
             홈으로 이동
           </NavLink>
-        </section>
+        </StatusMessage>
       ) : null}
 
       {!loading && !error && hourlyWeather ? (

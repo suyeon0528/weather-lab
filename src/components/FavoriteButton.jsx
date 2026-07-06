@@ -13,7 +13,11 @@ function FavoriteButton({ location, isFavorite, onAdd, onRemove }) {
   }
 
   return (
-    <button type="button" className="favorite-button" onClick={handleClick}>
+    <button
+      type="button"
+      className={`btn ${isFavorite ? 'btn-secondary' : 'btn-outline'} favorite-button`}
+      onClick={handleClick}
+    >
       {isFavorite ? '★ 즐겨찾기 삭제' : '☆ 즐겨찾기 추가'}
     </button>
   )

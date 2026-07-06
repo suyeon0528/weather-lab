@@ -95,7 +95,16 @@ export async function searchLocation(city) {
   }
 }
 
-export async function getWeatherByCoordinates(latitude, longitude, location) {
+export async function getWeatherByCoordinates(
+  latitude,
+  longitude,
+  location = {
+    name: '현재 위치',
+    region: '',
+    latitude,
+    longitude,
+  },
+) {
   const currentParams = [
     'temperature_2m',
     'relative_humidity_2m',
@@ -125,7 +134,7 @@ export async function getWeatherByCoordinates(latitude, longitude, location) {
   return {
     location: {
       name: location.name,
-      region: location.region,
+      region: location.region || '',
       latitude,
       longitude,
     },
