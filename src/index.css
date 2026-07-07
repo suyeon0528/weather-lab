@@ -36,20 +36,27 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+}
+
 html {
-  min-width: 320px;
   background: var(--color-background);
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100svh;
-  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--color-background);
 }
 
