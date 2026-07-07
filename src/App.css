@@ -12,6 +12,23 @@
   padding-inline: 0;
 }
 
+.footer-github-link {
+  color: var(--color-primary, #2563eb);
+  font-weight: 700;
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+
+.footer-github-link:hover {
+  text-decoration: underline;
+}
+
+.footer-github-link:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .header {
   display: flex;
   align-items: center;

@@ -12,7 +12,17 @@ function Footer() {
             Open-Meteo
           </a>
         </p>
-        <p>GitHub 링크를 나중에 연결할 수 있습니다.</p>
+        <p>
+        프로젝트 소스는{' '}
+        <a
+            href="https://github.com/suyeon0528/weather-lab"
+            target="_blank"
+            rel="noreferrer"
+            className="footer-github-link"
+      >
+    GitHub에서 확인할 수 있습니다.
+  </a>
+</p>
       </div>
     </footer>
   )
